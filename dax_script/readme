@@ -1,1 +1,3 @@
-
+In this DAX script folder, there are two files:
+1. The DAX script, which contains all the DAX queries and logic  used to generate the Power BI dashboard report for the NYC Airbnb listing data analysis project.
+2. The file contains the Power Query M code, which is required to generate the transformed columns in Power BI Power Query.
