@@ -1,0 +1,218 @@
+/*
+===============================================================================
+Power BI DAX Script: Airbnb Analytics
+===============================================================================
+This script defines calculated columns and measures for Airbnb data analysis.
+Each formula is annotated with short comments explaining its meaning.
+===============================================================================
+*/
+
+
+-- ============================================================================
+-- CALCULATED COLUMNS
+-- ============================================================================
+
+-- Column: Marks listing as Active if Price exists, else Inactive
+Listing Status = IF(ISBLANK('gold fact_listing'[Price]), "Inactive" , "Active")
+
+-- Column: Creates a calendar table spanning first to last review dates
+Review Date Range = 
+CALENDAR(
+    MIN('gold dim_review'[FirstReview]),
+    MAX('gold dim_review'[LastReview])
+)
+
+
+-- ============================================================================
+-- AVAILABILITY MEASURES
+-- ============================================================================
+
+-- Count of listings marked Active
+Active Listing = CALCULATE(COUNTROWS('gold fact_listing'),'gold fact_listing'[Listing Status] = "Active")
+
+-- Count of listings marked Inactive
+Inactive Listing = CALCULATE(COUNTROWS('gold fact_listing'), 'gold fact_listing'[Listing Status] = "Inactive")
+
+-- Distinct count of listings that have availability records
+Total Availability Listing = CALCULATE(DISTINCTCOUNT('gold fact_listing'[ListingKey]), 'gold dim_availability'[HasAvailability] = 1)
+
+-- Average availability values across different horizons
+Avg Avalibility 30 Days = AVERAGE('gold fact_listing'[Avail30Days])
+Avg Avilability of 60 days = AVERAGE('gold fact_listing'[Avail60Days])
+Avg Avilability of 90 days = AVERAGE('gold fact_listing'[Avail90Days])
+Avg Avilability of 365 days = AVERAGE('gold fact_listing'[Avail365Days])
+
+-- Availability rate normalized by horizon length
+Availbility Rate 30 Days = DIVIDE([Avg Avalibility 30 Days],30,0)
+Availbility Rate 60 Days = DIVIDE([Avg Avilability of 60 days],60,0)
+Availbility Rate 90 Days = DIVIDE([Avg Avilability of 90 days],90,0)
+Availbility Rate 365 Days = DIVIDE([Avg Avilability of 365 days],365,0)
+
+-- Percentage of listings with availability compared to total listings
+Avalibility Coverage % = DIVIDE([Total Availability Listing], [Total Listing],0)
+
+-- Average availability at year end
+Avg Availibility Year End = AVERAGE('gold dim_availability'[AvailYearEnd])
+
+-- Distinct count of listings with at least 25 days available in 30-day horizon
+Highest Availibility Listing = CALCULATE(DISTINCTCOUNT('gold fact_listing'[ListingKey]), 'gold fact_listing'[Avail30Days] >= 25)
+
+-- Dynamic measure returning average availability based on selected horizon
+Average Availability by Horizon = 
+SWITCH(
+    SELECTEDVALUE('Availability Horizon'[Horizon]),
+    "30 Days", [Avg Avalibility 30 Days],
+    "60 Days", [Avg Avilability of 60 days],
+    "90 Days", [Avg Avalibility 30 Days],
+    "365 Days", [Avg Avilability of 365 days]
+)
+
+-- Static table defining availability horizons
+Availability Horizon = 
+DATATABLE(
+    "Horizon", STRING,
+    {
+        {"30 Days"},
+        {"60 Days"},
+        {"90 Days"},
+        {"365 Days"}
+    }
+)
+
+
+-- ============================================================================
+-- RATING & REVIEW MEASURES
+-- ============================================================================
+
+-- Average of six rating categories per listing
+Average Rating Across Categories = 
+AVERAGEX('gold fact_listing',
+    ('gold fact_listing'[ValueRating] + 
+     'gold fact_listing'[AccuracyRating] + 
+     'gold fact_listing'[CheckInRating] + 
+     'gold fact_listing'[CleanlinessRating] + 
+     'gold fact_listing'[CommunicationRating]+ 
+     'gold fact_listing'[LocationRating]) / 6
+)
+
+-- Average overall rating, considering only listings with >= 5 reviews
+Avg Overall Rating = CALCULATE(AVERAGE('gold fact_listing'[Rating]), 'gold fact_listing'[TotalReviews] >= 5)
+
+-- Target benchmark rating across categories
+Target Avg Rating For Across categories = 5
+
+-- Average lifespan of reviews in years
+Average Review Lifespan Years = AVERAGE('gold dim_review'[Review Lifespan Year])
+
+-- Total number of reviews across listings
+Total Reviews = SUM('gold fact_listing'[TotalReviews])
+
+-- Frequency of reviews per listing
+Listing Review Frequency = DIVIDE('_Key Measures'[Total Reviews],'_Key Measures'[Total Listing],0)
+
+
+-- ============================================================================
+-- REVENUE MEASURES
+-- ============================================================================
+
+-- Total estimated revenue across listings
+Total Estimated Revenue = SUM('gold fact_listing'[EstRevenue])
+
+-- Revenue per active listing
+Revenue per Available Listing = DIVIDE('_Key Measures'[Total Estimated Revenue],[Active Listing],0)
+
+-- Rank neighborhoods by estimated revenue
+Neighbor estimated revenue rank = RANKX(ALLSELECTED('gold dim_location'[Neighborhood]),[Total Estimated Revenue],,DESC,Dense)
+
+-- Rank neighborhoods within borough by revenue
+Neighborhood Revenue Rank = 
+VAR CurrentBorough =
+    SELECTEDVALUE('gold dim_location'[Borough])
+VAR NeighborhoodTable =
+    CALCULATETABLE(
+        VALUES('gold dim_location'[Neighborhood]),
+        REMOVEFILTERS('gold dim_location'[Neighborhood]),
+        'gold dim_location'[Borough] = CurrentBorough
+    )
+RETURN
+IF(
+    ISINSCOPE('gold dim_location'[Neighborhood]),
+    RANKX(
+        NeighborhoodTable,
+        CALCULATE([Total Estimated Revenue]),
+        ,
+        DESC,
+        DENSE
+    )
+)
+
+
+-- ============================================================================
+-- LISTING & CAPACITY MEASURES
+-- ============================================================================
+
+-- Total count of listings
+Total Listing = COUNT('gold fact_listing'[ListingID])
+
+-- Distinct count of listing keys
+Listing Count = DISTINCTCOUNT('gold fact_listing'[ListingKey])
+
+-- Distinct listing keys (used as key measure reference)
+Key Measures = DISTINCT('gold fact_listing'[ListingKey])
+
+-- Average room capacity
+Avg Capacity = AVERAGE('gold dim_room'[Capacity])
+
+-- Beds per bedroom ratio
+Beds per Bedroom = DIVIDE(SUM('gold dim_room'[EstimatedBeds]), SUM('gold dim_room'[Bedrooms]))
+
+-- Average daily rate (price)
+Avg Daily Rate = AVERAGE('gold fact_listing'[Price])
+
+-- Average occupancy normalized by 365 days
+Avg Occupancy Rating = DIVIDE(AVERAGE('gold fact_listing'[EstOccupancy]),365,0)
+
+
+-- ============================================================================
+-- HOST MEASURES
+-- ============================================================================
+
+-- Average listings per host
+Average Listings per Host = DIVIDE(SUM('gold dim_host'[TotalListings]),COUNT('gold dim_host'[HostID]),0)
+
+-- Average host listing count
+Avg host listing = AVERAGE('gold dim_host'[TotalListings])
+
+-- Ratio of active listings to total listings per host
+Host Active Listing Rate = DIVIDE(MAX('gold dim_host'[ActiveListings]),MAX('gold dim_host'[TotalListings]),0)
+
+-- Rank hosts by total listings
+Host Listing Rank = CALCULATE(RANKX(ALL('gold dim_host'[HostID]),[Total Listing],,DESC,Dense))
+
+-- Categorize hosts by tenure in months
+Host Tenure Category = 
+SWITCH(
+    TRUE,
+    ISBLANK('gold dim_host'[TotalHostMonths]), "N/A",
+    'gold dim_host'[TotalHostMonths] >= 0 && 'gold dim_host'[TotalHostMonths] <= 6, "New Host",
+    'gold dim_host'[TotalHostMonths] >= 7 && 'gold dim_host'[TotalHostMonths] <= 12, "Emerging Host",
+    'gold dim_host'[TotalHostMonths] >= 13 && 'gold dim_host'[TotalHostMonths] <= 24, "Established Host",
+    'gold dim_host'[TotalHostMonths] >= 25 && 'gold dim_host'[TotalHostMonths] <= 60, "Experienced Host",
+    'gold dim_host'[TotalHostMonths] >= 61 && 'gold dim_host'[TotalHostMonths] <= 120, "Long-Term Host",
+    'gold dim_host'[TotalHostMonths] >= 120, "Veteran Host"
+)
+
+-- Distinct count of hosts
+Total Host count = DISTINCTCOUNT('gold dim_host'[HostID])
+
+-- Percentage of superhosts among total hosts
+Super Host Rate = DIVIDE([Total SuperHost], [Total Host count],0)
+
+-- Count of superhosts
+Total SuperHost = CALCULATE(COUNT('gold dim_host'[IsSuperhost]), 'gold dim_host'[IsSuperhost] = 1)
+
+-- Percentage of identity-verified hosts
+Identity Verification Rate = DIVIDE([Total Identity Verified],[Total Host count],0)
+
+-- Count of identity-verified hosts
+Total Identity Verified = CALCULATE(COUNT('gold dim_host'[IsIdentityVerified]),'gold dim_host'[IsIdentityVerified] = 1)
