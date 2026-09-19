@@ -9,7 +9,13 @@ End-to-end data analytics project covering **SQL Server ETL (Bronze â†’ Silver â
 ![Status](https://img.shields.io/badge/status-complete-brightgreen)
 
 ---
+## Video Demonstration
 
+
+ https://github.com/user-attachments/assets/f90f7f78-fecc-410d-9559-33c29bc3f57a
+
+
+---
 ## Table of Contents
 
 - [Project Overview](#project-overview)
