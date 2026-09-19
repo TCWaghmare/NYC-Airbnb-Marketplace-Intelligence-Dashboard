@@ -105,6 +105,8 @@ nyc-airbnb-listing-intelligence/
 
 ## Architecture: Bronze → Silver → Gold
 
+![Data Warehouse Architecture](https://github.com/TCWaghmare/NYC-Airbnb-Marketplace-Intelligence-Dashboard/blob/main/PowerBi/assets/Data%20Warehouse%20Archetecture.jpg)
+
 ```mermaid
 flowchart LR
     A[CSV Source Files] --> B[dbo staging table]
