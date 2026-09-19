@@ -198,7 +198,7 @@ Overall/Value/Location/Communication/Cleanliness/Check-In ratings; review activi
 - **Availability and revenue move in opposite directions across boroughs** — Manhattan and Brooklyn (highest revenue) are also the most review-active; Staten Island and Bronx (highest availability) are comparatively low-activity.
 - **Superhost status and active engagement are minority conditions** — only 19.8% of hosts are Superhosts and 16.0% of listings are active, despite 98.9% identity verification.
 
-Full visual-by-visual analysis, cross-visual insights, and business recommendations are documented in [`reports/NYC_Airbnb_Data_Analysis_Report.docx`](reports/NYC_Airbnb_Data_Analysis_Report.docx).
+Full visual-by-visual analysis, cross-visual insights, and business recommendations are documented in [`reports/NYC_Airbnb_Data_Analysis_Report.docx`](https://github.com/TCWaghmare/NYC-Airbnb-Marketplace-Intelligence-Dashboard/blob/main/Docs/NYC_Airbnb_Data_Analysis_Report.pdf).
 
 ## DAX Highlights
 
