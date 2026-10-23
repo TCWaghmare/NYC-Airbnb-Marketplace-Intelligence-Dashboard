@@ -285,9 +285,9 @@ The full measure list (~35 measures, 2 calculated columns) is in [`dax_script/da
 
 ## Author
 
-**[Your Name]**
+**Tejas Waghmare**
 Data Analyst / BI Developer
-[LinkedIn](#) · [Portfolio](#) · [Email](#)
+[LinkedIn](https://www.linkedin.com/in/tejascwaghmare/) · [Portfolio](#) · [Email](tejaswaghmare900@gmail.com)
 
 ---
 
